@@ -138,19 +138,15 @@ def strip_html(html_content):
     return text, links, images
 
 def tokenize_words(text):
-    # Alphanumeric words (ASCII + underscores); for Unicode letters/digits use \w with re.UNICODE
     return re.findall(r'\b\w+\b', text, flags=re.UNICODE)
 
 def split_sentences(text):
-    # Split on ., !, ? (one or more), keep non-empty segments
     parts = re.split(r'[.!?]+', text)
     return [p.strip() for p in parts if p.strip()]
 
 def count_paragraphs_from_text_preserving_double_newlines(text):
-    # Paragraphs are separated by double newlines (introduced in strip_html)
     if not text.strip():
         return 0
-    # Split on two or more newlines
     paras = re.split(r'\n{2,}', text.strip())
     paras = [p for p in paras if p.strip()]
     return len(paras)
@@ -160,7 +156,6 @@ def process_html_file(path):
     try:
         with open(path, 'rb') as f:
             raw = f.read()
-        # decode with best-effort
         html = raw.decode('utf-8', errors='ignore')
         text, links, images = strip_html(html)
 
@@ -196,8 +191,6 @@ def write_json(path, obj):
 
 def main():
     print(f"[{utcnow_iso()}] Processor starting", flush=True)
-
-    # Wait for fetcher completion status
     fetch_done = os.path.join(STATUS_DIR, "fetch_complete.json")
     while not os.path.exists(fetch_done):
         print(f"Waiting for {fetch_done}...", flush=True)
@@ -215,7 +208,6 @@ def main():
         print(f"Processing {path}...", flush=True)
         out, err = process_html_file(path)
         if err is None:
-            # Derive page_N.json by matching the page_N.html if possible, else use index
             base = os.path.basename(path)
             m = re.match(r'(page_\d+)\.html$', base, flags=re.IGNORECASE)
             stem = m.group(1) if m else f"page_{idx}"
@@ -226,7 +218,7 @@ def main():
         else:
             results.append({"source": os.path.basename(path), "output": None, "status": "failed", "error": err})
             failed += 1
-        time.sleep(0.2)  # be gentle
+        time.sleep(0.2)
 
     status = {
         "timestamp": utcnow_iso(),
